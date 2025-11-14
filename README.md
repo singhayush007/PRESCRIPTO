@@ -2,12 +2,9 @@
 
 ![Prescripto Screenshot](./frontend/src/assets/prescripto.png)
 
-
 PRESCRIPTO is a **full-stack MERN application** for booking doctor appointments.  
 It provides **three-level authentication**: Patient, Doctor, and Admin.  
 Patients can book and manage appointments, pay online, doctors can manage appointments and earnings, and admins can manage users and doctors.
-
-This project is ideal for **resume, portfolio, or college projects**.
 
 ---
 
@@ -150,6 +147,7 @@ STRIPE_SECRET_KEY="------ Stripe Secret Key here ------"
 ```
 cd frontend : npm run dev
 cd backend : npm run server
+cd admin : npm run dev
 ```
 
 6. **Open the app in your browser:**
