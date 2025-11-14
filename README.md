@@ -1,6 +1,7 @@
 # 🏥 PRESCRIPTO — Full Stack Doctor Appointment Booking System (MERN Stack)
 
-![PRESCRIPTO Screenshot](./frontend/assets/prescripto.png)
+![Prescripto Screenshot](./frontend/src/assets/prescripto.png)
+
 
 PRESCRIPTO is a **full-stack MERN application** for booking doctor appointments.  
 It provides **three-level authentication**: Patient, Doctor, and Admin.  
