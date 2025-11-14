@@ -92,8 +92,6 @@ prescripto-full-stack/
 │ ├── public/
 │ ├── package.json
 │ └── vite.config.js
-│
-├── How_To_Run_Project.pdf
 └── README.md
 
 ```
