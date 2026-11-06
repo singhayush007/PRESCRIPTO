@@ -1,12 +1,29 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { assets } from "../assets/assets";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
+import useTheme from "../utils/useTheme";
+import CommandPalette from "./CommandPalette";
+
+const links = [
+  { to: "/", label: "Home" },
+  { to: "/doctors", label: "All Doctors" },
+  { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
+];
+
+const desktopLink = ({ isActive }) =>
+  `relative px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+    isActive ? "bg-primary-50 text-primary-600" : "text-ink-soft hover:text-ink hover:bg-slate-100"
+  }`;
 
 const Navbar = () => {
   const navigate = useNavigate();
-
+  const { pathname } = useLocation();
   const [showMenu, setShowMenu] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const { dark, toggle: toggleTheme } = useTheme();
   const { token, setToken, userData } = useContext(AppContext);
 
   const logout = () => {
@@ -15,105 +32,172 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  return (
-    <div className="flex items-center justify-between text-sm py-4 mb-5 border-b border-b-[#ADADAD]">
-      <img
-        onClick={() => navigate("/")}
-        className="w-44 cursor-pointer"
-        src={assets.logo}
-        alt=""
-      />
-      <ul className="md:flex items-start gap-5 font-medium hidden">
-        <NavLink to="/">
-          <li className="py-1">HOME</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to="/doctors">
-          <li className="py-1">ALL DOCTORS</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to="/about">
-          <li className="py-1">ABOUT</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to="/contact">
-          <li className="py-1">CONTACT</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-      </ul>
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-      <div className="flex items-center gap-4 ">
-        {token && userData ? (
-          <div className="flex items-center gap-2 cursor-pointer group relative">
-            <img className="w-8 rounded-full" src={userData.image} alt="" />
-            <img className="w-2.5" src={assets.dropdown_icon} alt="" />
-            <div className="absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block">
-              <div className="min-w-48 bg-gray-50 rounded flex flex-col gap-4 p-4">
-                <p
-                  onClick={() => navigate("/my-profile")}
-                  className="hover:text-black cursor-pointer"
-                >
-                  My Profile
-                </p>
-                <p
-                  onClick={() => navigate("/my-appointments")}
-                  className="hover:text-black cursor-pointer"
-                >
-                  My Appointments
-                </p>
-                <p onClick={logout} className="hover:text-black cursor-pointer">
-                  Logout
-                </p>
+  // ⌘K / Ctrl+K opens quick search
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowSearch((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // close the mobile menu on navigation
+  useEffect(() => {
+    setShowMenu(false);
+  }, [pathname]);
+
+  return (
+    <>
+    <header
+      className={`sticky top-0 z-40 border-b transition-all ${
+        scrolled
+          ? "border-slate-200/70 bg-card/80 shadow-sm backdrop-blur-lg"
+          : "border-transparent bg-card/80 backdrop-blur"
+      }`}
+    >
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link to="/" aria-label="Prescripto home">
+          <img data-logo className="w-36 sm:w-40" src={assets.logo} alt="Prescripto" />
+        </Link>
+
+        <ul className="hidden items-center gap-1 md:flex">
+          {links.map((l) => (
+            <li key={l.to}>
+              <NavLink to={l.to} className={desktopLink} end={l.to === "/"}>
+                {l.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => setShowSearch(true)}
+            aria-label="Search doctors"
+            className="flex items-center gap-2 rounded-full border border-slate-200 bg-card p-2.5 text-ink-soft transition hover:border-primary-300 hover:text-primary lg:px-4 lg:py-2"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="9" cy="9" r="6" />
+              <path d="m14 14 4 4" />
+            </svg>
+            <span className="hidden text-sm lg:inline">Search</span>
+            <kbd className="hidden rounded border border-slate-200 px-1.5 text-[10px] font-semibold text-ink-muted lg:inline">⌘K</kbd>
+          </button>
+          <button
+            onClick={toggleTheme}
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            className="rounded-full border border-slate-200 bg-card p-2.5 text-ink-soft transition hover:border-primary-300 hover:text-primary"
+          >
+            {dark ? (
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M2 12h2M20 12h2M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.800A9 9 0 1 1 11.200 3a7 7 0 0 0 9.800 9.800Z" />
+              </svg>
+            )}
+          </button>
+          {token && userData ? (
+            <div className="group relative">
+              <button className="flex items-center gap-2 rounded-full border border-slate-200 bg-card py-1 pl-1 pr-3 shadow-sm transition hover:border-primary-200">
+                <img className="h-8 w-8 rounded-full object-cover" src={userData.image} alt="" />
+                <span className="hidden max-w-24 truncate text-sm font-medium sm:block">
+                  {userData.name?.split(" ")[0]}
+                </span>
+                <img className="w-2.5" src={assets.dropdown_icon} alt="" />
+              </button>
+              <div className="invisible absolute right-0 top-full z-20 pt-2 opacity-0 transition-all group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                <div className="card min-w-52 p-2 text-sm font-medium text-ink-soft">
+                  <p className="truncate px-3 pb-2 pt-1 text-xs text-ink-muted">{userData.email}</p>
+                  <button onClick={() => navigate("/my-profile")} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-primary-50 hover:text-primary-600">
+                    My Profile
+                  </button>
+                  <button onClick={() => navigate("/my-appointments")} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-primary-50 hover:text-primary-600">
+                    My Appointments
+                  </button>
+                  <hr className="my-1 border-slate-100" />
+                  <button onClick={logout} className="block w-full rounded-lg px-3 py-2 text-left text-red-500 hover:bg-red-50">
+                    Logout
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => navigate("/login")}
-            className="bg-primary text-white px-8 py-3 rounded-full font-light hidden md:block"
-          >
-            Create account
-          </button>
-        )}
-        <img
-          onClick={() => setShowMenu(true)}
-          className="w-6 md:hidden"
-          src={assets.menu_icon}
-          alt=""
-        />
+          ) : (
+            <button onClick={() => navigate("/login")} className="btn-primary hidden !py-2.5 md:inline-flex">
+              Create account
+            </button>
+          )}
 
-        {/* ---- Mobile Menu ---- */}
+          <button
+            onClick={() => setShowMenu(true)}
+            className="rounded-lg p-2 hover:bg-slate-100 md:hidden"
+            aria-label="Open menu"
+          >
+            <img className="w-6" src={assets.menu_icon} alt="" />
+          </button>
+        </div>
+      </nav>
+
+    </header>
+
+      {/* ---- Mobile drawer (outside <header>: its backdrop-blur would trap fixed children) ---- */}
+      <div
+        className={`fixed inset-0 z-50 md:hidden ${showMenu ? "visible" : "invisible"}`}
+        aria-hidden={!showMenu}
+      >
         <div
-          className={`md:hidden ${
-            showMenu ? "fixed w-full" : "h-0 w-0"
-          } right-0 top-0 bottom-0 z-20 overflow-hidden bg-white transition-all`}
+          onClick={() => setShowMenu(false)}
+          className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity ${showMenu ? "opacity-100" : "opacity-0"}`}
+        />
+        <div
+          className={`absolute right-0 top-0 flex h-full w-72 flex-col bg-card p-5 shadow-2xl transition-transform duration-300 ${
+            showMenu ? "translate-x-0" : "translate-x-full"
+          }`}
         >
-          <div className="flex items-center justify-between px-5 py-6">
-            <img src={assets.logo} className="w-36" alt="" />
-            <img
-              onClick={() => setShowMenu(false)}
-              src={assets.cross_icon}
-              className="w-7"
-              alt=""
-            />
+          <div className="mb-6 flex items-center justify-between">
+            <img data-logo src={assets.logo} className="w-32" alt="" />
+            <button onClick={() => setShowMenu(false)} className="rounded-lg p-2 hover:bg-slate-100" aria-label="Close menu">
+              <img src={assets.cross_icon} className="w-5" alt="" />
+            </button>
           </div>
-          <ul className="flex flex-col items-center gap-2 mt-5 px-5 text-lg font-medium">
-            <NavLink onClick={() => setShowMenu(false)} to="/">
-              <p className="px-4 py-2 rounded full inline-block">HOME</p>
-            </NavLink>
-            <NavLink onClick={() => setShowMenu(false)} to="/doctors">
-              <p className="px-4 py-2 rounded full inline-block">ALL DOCTORS</p>
-            </NavLink>
-            <NavLink onClick={() => setShowMenu(false)} to="/about">
-              <p className="px-4 py-2 rounded full inline-block">ABOUT</p>
-            </NavLink>
-            <NavLink onClick={() => setShowMenu(false)} to="/contact">
-              <p className="px-4 py-2 rounded full inline-block">CONTACT</p>
-            </NavLink>
+          <ul className="flex flex-col gap-1">
+            {links.map((l) => (
+              <li key={l.to}>
+                <NavLink
+                  to={l.to}
+                  end={l.to === "/"}
+                  className={({ isActive }) =>
+                    `block rounded-xl px-4 py-3 font-medium ${isActive ? "bg-primary-50 text-primary-600" : "text-ink-soft"}`
+                  }
+                >
+                  {l.label}
+                </NavLink>
+              </li>
+            ))}
           </ul>
+          <div className="mt-auto">
+            {token ? (
+              <button onClick={logout} className="btn-outline w-full">Logout</button>
+            ) : (
+              <button onClick={() => navigate("/login")} className="btn-primary w-full">Create account</button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+      <CommandPalette open={showSearch} onClose={() => setShowSearch(false)} />
+    </>
   );
 };
 
