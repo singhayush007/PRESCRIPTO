@@ -6,12 +6,8 @@ import appointmentModel from "../models/appointmentModel.js";
 import doctorModel from "../models/doctorModel.js";
 import userModel from "../models/userModel.js";
 import { isValidId, uploadImage, releaseSlot } from "../utils/helpers.js";
+import { fail, serverError } from "../utils/http.js";
 
-const fail = (res, message) => res.json({ success: false, message });
-const serverError = (res, error) => {
-  console.error(error);
-  res.json({ success: false, message: "Something went wrong, please try again" });
-};
 
 // constant-time string comparison (hash first so lengths always match)
 const safeEqual = (a, b) => {

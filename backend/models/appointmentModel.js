@@ -15,6 +15,13 @@ const appointmentSchema = new mongoose.Schema({
   reviewed: { type: Boolean, default: false },
 });
 
+// Defence in depth for double booking: the doctor's slots_booked update is already atomic, and this
+// partial unique index makes the database itself refuse two active appointments for one slot.
+appointmentSchema.index(
+  { docId: 1, slotDate: 1, slotTime: 1 },
+  { unique: true, partialFilterExpression: { cancelled: false } }
+);
+
 const appointmentModel =
   mongoose.models.appointment ||
   mongoose.model("appointment", appointmentSchema);

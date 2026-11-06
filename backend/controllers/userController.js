@@ -14,6 +14,7 @@ import {
   uploadImage,
   releaseSlot,
 } from "../utils/helpers.js";
+import { fail, serverError } from "../utils/http.js";
 
 // Gateway initialize (optional: app still boots if a gateway isn't configured)
 const stripeInstance = process.env.STRIPE_SECRET_KEY
@@ -31,11 +32,6 @@ const TOKEN_EXPIRY = "7d";
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 
-const fail = (res, message) => res.json({ success: false, message });
-const serverError = (res, error) => {
-  console.error(error);
-  res.json({ success: false, message: "Something went wrong, please try again" });
-};
 
 // Returns the appointment only if it exists and belongs to the user
 const getOwnAppointment = async (appointmentId, userId) => {
@@ -184,6 +180,7 @@ const bookAppointment = async (req, res) => {
     } catch (error) {
       // roll back the slot if the appointment could not be saved
       await releaseSlot({ docId, slotDate, slotTime });
+      if (error.code === 11000) return fail(res, "Slot Not Available");
       throw error;
     }
 
@@ -380,6 +377,7 @@ const rescheduleAppointment = async (req, res) => {
       await appointment.save();
     } catch (error) {
       await releaseSlot({ docId: old.docId, slotDate, slotTime });
+      if (error.code === 11000) return fail(res, "Slot Not Available");
       throw error;
     }
     await releaseSlot(old);
