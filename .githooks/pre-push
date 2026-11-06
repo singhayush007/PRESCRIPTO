@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# Blocks direct pushes to protected branches: changes reach them through a Pull Request only.
+# git passes each ref being pushed on stdin as: <local ref> <local sha1> <remote ref> <remote sha1>
+
+PROTECTED_BRANCHES="main"
+
+# Emergency escape hatch (also documented in .githooks/README.md):
+#   ALLOW_PROTECTED_PUSH=1 git push origin main
+if [ "$ALLOW_PROTECTED_PUSH" = "1" ]; then
+  echo "ALLOW_PROTECTED_PUSH=1 - protected branch check skipped."
+  exit 0
+fi
+
+blocked=""
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$remote_ref" ] && continue
+  case "$remote_ref" in
+    refs/heads/*) branch=${remote_ref#refs/heads/} ;;
+    *) continue ;;
+  esac
+  for protected in $PROTECTED_BRANCHES; do
+    if [ "$branch" = "$protected" ]; then
+      blocked="$blocked $branch"
+    fi
+  done
+done
+
+if [ -n "$blocked" ]; then
+  echo ""
+  echo "  Push rejected - protected branch:$blocked"
+  echo "  Create a feature branch and open a Pull Request instead."
+  echo "  (Emergency only: ALLOW_PROTECTED_PUSH=1 git push origin <branch>)"
+  echo ""
+  exit 1
+fi
+
+exit 0
