@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /my-appointments
+Disallow: /my-profile
+Disallow: /verify
+Disallow: /booking-success

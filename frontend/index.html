@@ -1,22 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prescripto</title>
+    <title>Prescripto — Book trusted doctors online</title>
+    <meta
+      name="description"
+      content="Find verified doctors by speciality, compare ratings and fees, and book or reschedule appointments online with Prescripto."
+    />
+    <meta name="theme-color" content="#5F6FFF" />
+    <link rel="canonical" href="https://prescriptofullstack.vercel.app/" />
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Prescripto" />
+    <meta property="og:title" content="Prescripto — Book trusted doctors online" />
+    <meta
+      property="og:description"
+      content="Search verified specialists, see real patient ratings and book a slot that fits your day."
+    />
+    <meta property="og:url" content="https://prescriptofullstack.vercel.app/" />
+    <meta property="og:image" content="https://prescriptofullstack.vercel.app/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
     <script>
       // apply saved/system theme before first paint (no flash)
       (function () {
         var saved = localStorage.getItem("theme");
-        var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var dark = saved
+          ? saved === "dark"
+          : window.matchMedia("(prefers-color-scheme: dark)").matches;
         if (dark) document.documentElement.classList.add("dark");
       })();
     </script>
   </head>
   <body>
+    <noscript>Prescripto needs JavaScript enabled to run.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -13,8 +13,16 @@
     --ink-muted: 148 163 184;
     --p50: 243 244 255;
     --p100: 230 233 255;
-    --s50: 248 250 252; --s100: 241 245 249; --s200: 226 232 240; --s300: 203 213 225; --s400: 148 163 184;
-    --s500: 100 116 139; --s600: 71 85 105; --s700: 51 65 85; --s800: 30 41 59; --s900: 15 23 42;
+    --s50: 248 250 252;
+    --s100: 241 245 249;
+    --s200: 226 232 240;
+    --s300: 203 213 225;
+    --s400: 148 163 184;
+    --s500: 100 116 139;
+    --s600: 71 85 105;
+    --s700: 51 65 85;
+    --s800: 30 41 59;
+    --s900: 15 23 42;
     color-scheme: light;
   }
   .dark {
@@ -25,8 +33,16 @@
     --ink-muted: 112 122 148;
     --p50: 27 32 66;
     --p100: 36 43 90;
-    --s50: 21 27 46; --s100: 28 35 58; --s200: 41 49 76; --s300: 62 72 102; --s400: 110 120 148;
-    --s500: 140 150 176; --s600: 170 178 202; --s700: 200 206 224; --s800: 225 229 242; --s900: 4 7 16;
+    --s50: 21 27 46;
+    --s100: 28 35 58;
+    --s200: 41 49 76;
+    --s300: 62 72 102;
+    --s400: 110 120 148;
+    --s500: 140 150 176;
+    --s600: 170 178 202;
+    --s700: 200 206 224;
+    --s800: 225 229 242;
+    --s900: 4 7 16;
     color-scheme: dark;
   }
   html {
@@ -73,21 +89,42 @@
 }
 
 /* tinted status backgrounds are too bright on a dark surface */
-.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
-.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.14); }
-.dark .bg-red-50 { background-color: rgb(239 68 68 / 0.14); }
-.dark .hover\:bg-red-50:hover { background-color: rgb(239 68 68 / 0.14); }
-.dark img[data-logo] { filter: brightness(0) invert(1); }
+.dark .bg-emerald-50 {
+  background-color: rgb(16 185 129 / 0.14);
+}
+.dark .bg-amber-50 {
+  background-color: rgb(245 158 11 / 0.14);
+}
+.dark .bg-red-50 {
+  background-color: rgb(239 68 68 / 0.14);
+}
+.dark .hover\:bg-red-50:hover {
+  background-color: rgb(239 68 68 / 0.14);
+}
+.dark img[data-logo] {
+  filter: brightness(0) invert(1);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes draw {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes grow {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
 }
