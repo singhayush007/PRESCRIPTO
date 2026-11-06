@@ -11,6 +11,8 @@ import {
   verifyRazorpay,
   paymentStripe,
   verifyStripe,
+  rescheduleAppointment,
+  addReview,
 } from "../controllers/userController.js";
 import upload from "../middleware/multer.js";
 import authUser from "../middleware/authUser.js";
@@ -22,13 +24,15 @@ userRouter.post("/login", loginUser);
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(
   "/update-profile",
+  authUser, // authenticate first so anonymous users cannot upload files
   upload.single("image"),
-  authUser,
   updateProfile
 );
 userRouter.post("/book-appointment", authUser, bookAppointment);
 userRouter.get("/appointments", authUser, listAppointment);
 userRouter.post("/cancel-appointment", authUser, cancelAppointment);
+userRouter.post("/reschedule-appointment", authUser, rescheduleAppointment);
+userRouter.post("/add-review", authUser, addReview);
 userRouter.post("/payment-razorpay", authUser, paymentRazorpay);
 userRouter.post("/verifyRazorpay", authUser, verifyRazorpay);
 userRouter.post("/payment-stripe", authUser, paymentStripe);
