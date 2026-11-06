@@ -1,0 +1,25 @@
+{
+  "name": "prescripto",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Prescripto - doctor appointment booking (backend API, patient app, admin panel)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
+    "install:all": "npm --prefix backend install && npm --prefix frontend install && npm --prefix admin install",
+    "dev:backend": "npm --prefix backend run server",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:admin": "npm --prefix admin run dev",
+    "lint": "npm --prefix backend run lint && npm --prefix frontend run lint && npm --prefix admin run lint",
+    "test": "npm --prefix backend test && npm --prefix frontend test && npm --prefix admin test",
+    "build": "npm --prefix frontend run build && npm --prefix admin run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}
