@@ -1,43 +1,53 @@
 import React, { useContext } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { DoctorContext } from "../context/DoctorContext";
 import { AdminContext } from "../context/AdminContext";
-import { useNavigate } from "react-router-dom";
+import useTheme from "../utils/useTheme";
+import Icon from "./Icon";
 
 const Navbar = () => {
   const { dToken, setDToken } = useContext(DoctorContext);
   const { aToken, setAToken } = useContext(AdminContext);
-
+  const { dark, toggle } = useTheme();
   const navigate = useNavigate();
+  useLocation();
 
   const logout = () => {
+    if (dToken) {
+      setDToken("");
+      localStorage.removeItem("dToken");
+    }
+    if (aToken) {
+      setAToken("");
+      localStorage.removeItem("aToken");
+    }
     navigate("/");
-    dToken && setDToken("");
-    dToken && localStorage.removeItem("dToken");
-    aToken && setAToken("");
-    aToken && localStorage.removeItem("aToken");
   };
 
   return (
-    <div className="flex justify-between items-center px-4 sm:px-10 py-3 border-b bg-white">
-      <div className="flex items-center gap-2 text-xs">
-        <img
-          onClick={() => navigate("/")}
-          className="w-36 sm:w-40 cursor-pointer"
-          src={assets.admin_logo}
-          alt=""
-        />
-        <p className="border px-2.5 py-0.5 rounded-full border-gray-500 text-gray-600">
-          {aToken ? "Admin" : "Doctor"}
-        </p>
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-100 bg-card/80 px-4 backdrop-blur-lg sm:px-6 lg:px-8">
+      {/* logo is only shown here on mobile; desktop has it in the sidebar */}
+      <img data-logo className="w-32 md:hidden" src={assets.admin_logo} alt="Prescripto" />
+      <span className="hidden rounded-full bg-primary-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-600 md:inline">
+        {aToken ? "Admin" : "Doctor"}
+      </span>
+
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-600 md:hidden">{aToken ? "Admin" : "Doctor"}</span>
+        <button
+          onClick={toggle}
+          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+          className="rounded-full border border-slate-200 bg-card p-2.5 text-ink-soft transition hover:border-primary-300 hover:text-primary"
+        >
+          <Icon name={dark ? "sun" : "moon"} className="h-4 w-4" />
+        </button>
+        <button onClick={logout} className="flex items-center gap-2 rounded-full border border-slate-200 bg-card px-4 py-2 text-sm font-medium text-ink-soft transition hover:border-red-300 hover:bg-red-50 hover:text-red-500">
+          <Icon name="logout" className="h-4 w-4" />
+          <span className="hidden sm:inline">Logout</span>
+        </button>
       </div>
-      <button
-        onClick={() => logout()}
-        className="bg-primary text-white text-sm px-10 py-2 rounded-full"
-      >
-        Logout
-      </button>
-    </div>
+    </header>
   );
 };
 
