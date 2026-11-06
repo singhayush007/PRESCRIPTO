@@ -2,12 +2,11 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import appointmentModel from "../models/appointmentModel.js";
-import doctorModel from "../models/doctorModel.js";
-import userModel from "../models/userModel.js";
-import { isValidId, uploadImage, releaseSlot } from "../utils/helpers.js";
-import { fail, serverError } from "../utils/http.js";
-
+import appointmentModel from "../appointments/appointment.model.js";
+import doctorModel from "../doctors/doctor.model.js";
+import userModel from "../users/user.model.js";
+import { isValidId, uploadImage, releaseSlot } from "../../shared/utils/helpers.js";
+import { fail, serverError } from "../../shared/utils/http.js";
 
 // constant-time string comparison (hash first so lengths always match)
 const safeEqual = (a, b) => {
@@ -142,21 +141,34 @@ const adminDashboard = async (req, res) => {
     // count in the database instead of loading every document into memory
     const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
-    const [doctors, patients, appointments, latestAppointments, cancelled, completed, paid, revenueAgg, recent] =
-      await Promise.all([
-        doctorModel.countDocuments(),
-        userModel.countDocuments(),
-        appointmentModel.countDocuments(),
-        appointmentModel.find({}).sort({ date: -1 }).limit(5),
-        appointmentModel.countDocuments({ cancelled: true }),
-        appointmentModel.countDocuments({ cancelled: false, isCompleted: true }),
-        appointmentModel.countDocuments({ cancelled: false, isCompleted: false, payment: true }),
-        appointmentModel.aggregate([
-          { $match: { cancelled: false, $or: [{ payment: true }, { isCompleted: true }] } },
-          { $group: { _id: null, total: { $sum: "$amount" } } },
-        ]),
-        appointmentModel.find({ date: { $gte: weekAgo } }).select("date -_id").limit(5000).lean(),
-      ]);
+    const [
+      doctors,
+      patients,
+      appointments,
+      latestAppointments,
+      cancelled,
+      completed,
+      paid,
+      revenueAgg,
+      recent,
+    ] = await Promise.all([
+      doctorModel.countDocuments(),
+      userModel.countDocuments(),
+      appointmentModel.countDocuments(),
+      appointmentModel.find({}).sort({ date: -1 }).limit(5),
+      appointmentModel.countDocuments({ cancelled: true }),
+      appointmentModel.countDocuments({ cancelled: false, isCompleted: true }),
+      appointmentModel.countDocuments({ cancelled: false, isCompleted: false, payment: true }),
+      appointmentModel.aggregate([
+        { $match: { cancelled: false, $or: [{ payment: true }, { isCompleted: true }] } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
+      appointmentModel
+        .find({ date: { $gte: weekAgo } })
+        .select("date -_id")
+        .limit(5000)
+        .lean(),
+    ]);
 
     res.json({
       success: true,
@@ -167,7 +179,12 @@ const adminDashboard = async (req, res) => {
         latestAppointments,
         revenue: revenueAgg[0]?.total || 0,
         // pending = booked, not paid, not completed, not cancelled
-        status: { cancelled, completed, paid, pending: Math.max(appointments - cancelled - completed - paid, 0) },
+        status: {
+          cancelled,
+          completed,
+          paid,
+          pending: Math.max(appointments - cancelled - completed - paid, 0),
+        },
         // booking timestamps of the last 7 days; the browser buckets them per day in its own timezone
         recentBookings: recent.map((a) => a.date),
       },
@@ -177,11 +194,4 @@ const adminDashboard = async (req, res) => {
   }
 };
 
-export {
-  loginAdmin,
-  appointmentsAdmin,
-  appointmentCancel,
-  addDoctor,
-  allDoctors,
-  adminDashboard,
-};
+export { loginAdmin, appointmentsAdmin, appointmentCancel, addDoctor, allDoctors, adminDashboard };

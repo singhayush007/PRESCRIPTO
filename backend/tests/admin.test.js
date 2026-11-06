@@ -18,7 +18,18 @@ describe("admin: adding doctors", () => {
 
   const addDoctor = (fields = {}, { image = true, token = atoken, mime = "image/png" } = {}) => {
     let req = ctx.request.post("/api/admin/add-doctor").set("atoken", token);
-    const all = { name: "Dr. New", email: "New.Doc@Test.com", password: "Doctor@123", speciality: "Neurologist", degree: "MBBS", experience: "3 Years", about: "Bio", fees: "70", address: JSON.stringify({ line1: "a", line2: "b" }), ...fields };
+    const all = {
+      name: "Dr. New",
+      email: "New.Doc@Test.com",
+      password: "Doctor@123",
+      speciality: "Neurologist",
+      degree: "MBBS",
+      experience: "3 Years",
+      about: "Bio",
+      fees: "70",
+      address: JSON.stringify({ line1: "a", line2: "b" }),
+      ...fields,
+    };
     for (const [k, v] of Object.entries(all)) if (v !== undefined) req = req.field(k, v);
     return image ? req.attach("image", PNG, { filename: "doc.png", contentType: mime }) : req;
   };
@@ -32,17 +43,28 @@ describe("admin: adding doctors", () => {
     assert.notEqual(doc.password, "Doctor@123");
     assert.equal(doc.fees, 70);
     // the new doctor can log in
-    const login = await ctx.request.post("/api/doctor/login").send({ email: "new.doc@test.com", password: "Doctor@123" });
+    const login = await ctx.request
+      .post("/api/doctor/login")
+      .send({ email: "new.doc@test.com", password: "Doctor@123" });
     assert.equal(login.body.success, true);
   });
 
   test("rejects duplicates, missing image, bad email, short password and invalid fees", async () => {
     assert.match((await addDoctor()).body.message, /already exists/);
-    assert.equal((await addDoctor({ email: "a@test.com" }, { image: false })).body.message, "Doctor image is required");
+    assert.equal(
+      (await addDoctor({ email: "a@test.com" }, { image: false })).body.message,
+      "Doctor image is required"
+    );
     assert.match((await addDoctor({ email: "not-an-email" })).body.message, /valid email/);
-    assert.match((await addDoctor({ email: "b@test.com", password: "short" })).body.message, /at least 8/);
+    assert.match(
+      (await addDoctor({ email: "b@test.com", password: "short" })).body.message,
+      /at least 8/
+    );
     assert.match((await addDoctor({ email: "c@test.com", fees: "-5" })).body.message, /valid fees/);
-    assert.match((await addDoctor({ email: "d@test.com", address: "{broken" })).body.message, /Invalid address/);
+    assert.match(
+      (await addDoctor({ email: "d@test.com", address: "{broken" })).body.message,
+      /Invalid address/
+    );
   });
 
   test("only images are accepted (400) and only admins may call it (401)", async () => {

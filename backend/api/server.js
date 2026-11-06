@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import app from "../app.js";
 import { config } from "../config/env.js";
 import connectDB from "../config/mongodb.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../shared/utils/logger.js";
 
 const onVercel = Boolean(process.env.VERCEL);
 
@@ -14,7 +14,9 @@ connectDB().catch((err) => {
 
 // On Vercel the platform handles listening; elsewhere we start the server ourselves
 if (!onVercel) {
-  const server = app.listen(config.port, () => logger.info({ port: config.port, env: config.env }, "Server started"));
+  const server = app.listen(config.port, () =>
+    logger.info({ port: config.port, env: config.env }, "Server started")
+  );
 
   // graceful shutdown: stop accepting requests, finish in-flight ones, close the database
   const shutdown = (signal) => {

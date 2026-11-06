@@ -1,10 +1,9 @@
 import fs from "fs/promises";
 import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
-import doctorModel from "../models/doctorModel.js";
+import doctorModel from "../../features/doctors/doctor.model.js";
 
-export const isValidId = (id) =>
-  typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
+export const isValidId = (id) => typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
 
 // slotDate format used by the frontend: "<day>_<month>_<year>", e.g. "6_11_2026"
 export const isValidSlotDate = (value) =>

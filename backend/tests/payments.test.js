@@ -14,7 +14,8 @@ describe("payments (gateways not configured)", () => {
   });
   after(() => ctx.stop());
 
-  const post = (path, body, token = user.token) => ctx.request.post(`/api/user/${path}`).set("token", token).send(body);
+  const post = (path, body, token = user.token) =>
+    ctx.request.post(`/api/user/${path}`).set("token", token).send(body);
 
   test("endpoints require a patient token", async () => {
     for (const path of ["payment-stripe", "verifyStripe", "payment-razorpay", "verifyRazorpay"]) {
@@ -23,8 +24,14 @@ describe("payments (gateways not configured)", () => {
   });
 
   test("starting a payment reports that the gateway is not configured instead of crashing", async () => {
-    assert.equal((await post("payment-stripe", { appointmentId })).body.message, "Stripe is not configured");
-    assert.equal((await post("payment-razorpay", { appointmentId })).body.message, "Razorpay is not configured");
+    assert.equal(
+      (await post("payment-stripe", { appointmentId })).body.message,
+      "Stripe is not configured"
+    );
+    assert.equal(
+      (await post("payment-razorpay", { appointmentId })).body.message,
+      "Razorpay is not configured"
+    );
   });
 
   test("a client can never mark an appointment as paid by sending success=true", async () => {

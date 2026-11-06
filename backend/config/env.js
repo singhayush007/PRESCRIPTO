@@ -24,7 +24,11 @@ export const config = {
   // How many reverse proxies sit in front of the app (Vercel, Nginx, a load balancer...).
   // Needed so rate limiting sees the real client IP instead of the proxy's.
   trustProxy:
-    process.env.TRUST_PROXY !== undefined ? num(process.env.TRUST_PROXY, 0) : env === "production" ? 1 : 0,
+    process.env.TRUST_PROXY !== undefined
+      ? num(process.env.TRUST_PROXY, 0)
+      : env === "production"
+        ? 1
+        : 0,
   rateLimit: {
     max: num(process.env.RATE_LIMIT_MAX, 300),
     authMax: num(process.env.AUTH_RATE_LIMIT_MAX, 20),

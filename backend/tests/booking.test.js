@@ -10,7 +10,8 @@ describe("booking, rescheduling and cancelling", () => {
   });
   after(() => ctx.stop());
 
-  const heldSlots = async (id = doctor._id) => Object.values((await ctx.models.doctor.findById(id)).slots_booked).flat();
+  const heldSlots = async (id = doctor._id) =>
+    Object.values((await ctx.models.doctor.findById(id)).slots_booked).flat();
 
   test("books an appointment and holds the slot", async () => {
     const { request } = ctx;
@@ -26,19 +27,43 @@ describe("booking, rescheduling and cancelling", () => {
   test("10 concurrent bookings of the same slot produce exactly one appointment", async () => {
     const { request, models } = ctx;
     const users = await Promise.all(Array.from({ length: 10 }, () => registerUser(request)));
-    const results = await Promise.all(users.map((u) => book(request, u.token, doctor._id, "9_11_2026", "10:00 AM")));
+    const results = await Promise.all(
+      users.map((u) => book(request, u.token, doctor._id, "9_11_2026", "10:00 AM"))
+    );
     assert.equal(results.filter((r) => r.body.success).length, 1);
-    assert.equal(await models.appointment.countDocuments({ docId: String(doctor._id), slotDate: "9_11_2026", slotTime: "10:00 AM" }), 1);
+    assert.equal(
+      await models.appointment.countDocuments({
+        docId: String(doctor._id),
+        slotDate: "9_11_2026",
+        slotTime: "10:00 AM",
+      }),
+      1
+    );
     assert.equal((await heldSlots()).filter((t) => t === "10:00 AM").length, 1);
   });
 
   test("the database itself refuses two active appointments for one slot", async () => {
     const { models } = ctx;
-    const base = { userId: "u1", docId: String(doctor._id), slotDate: "20_11_2026", slotTime: "11:00 AM", userData: {}, docData: {}, amount: 1, date: 1 };
+    const base = {
+      userId: "u1",
+      docId: String(doctor._id),
+      slotDate: "20_11_2026",
+      slotTime: "11:00 AM",
+      userData: {},
+      docData: {},
+      amount: 1,
+      date: 1,
+    };
     await models.appointment.create(base);
-    await assert.rejects(models.appointment.create({ ...base, userId: "u2" }), (err) => err.code === 11000);
+    await assert.rejects(
+      models.appointment.create({ ...base, userId: "u2" }),
+      (err) => err.code === 11000
+    );
     // ...but a cancelled appointment does not block the slot
-    await models.appointment.updateOne({ userId: "u1", slotDate: "20_11_2026" }, { cancelled: true });
+    await models.appointment.updateOne(
+      { userId: "u1", slotDate: "20_11_2026" },
+      { cancelled: true }
+    );
     await models.appointment.create({ ...base, userId: "u3" });
   });
 
@@ -72,29 +97,47 @@ describe("booking, rescheduling and cancelling", () => {
       await book(request, owner.token, doctor._id, "10_11_2026", "12:00 PM");
       const [appt] = await myAppointments(request, owner.token);
 
-      const stranger = await request.post("/api/user/cancel-appointment").set("token", other.token).send({ appointmentId: appt._id });
+      const stranger = await request
+        .post("/api/user/cancel-appointment")
+        .set("token", other.token)
+        .send({ appointmentId: appt._id });
       assert.equal(stranger.body.success, false);
 
-      const first = await request.post("/api/user/cancel-appointment").set("token", owner.token).send({ appointmentId: appt._id });
+      const first = await request
+        .post("/api/user/cancel-appointment")
+        .set("token", owner.token)
+        .send({ appointmentId: appt._id });
       assert.equal(first.body.success, true);
       assert.ok(!(await heldSlots()).includes("12:00 PM"), "slot should be free again");
 
-      const again = await request.post("/api/user/cancel-appointment").set("token", owner.token).send({ appointmentId: appt._id });
+      const again = await request
+        .post("/api/user/cancel-appointment")
+        .set("token", owner.token)
+        .send({ appointmentId: appt._id });
       assert.equal(again.body.success, false);
       // and somebody else can now take it
-      assert.equal((await book(request, other.token, doctor._id, "10_11_2026", "12:00 PM")).body.success, true);
+      assert.equal(
+        (await book(request, other.token, doctor._id, "10_11_2026", "12:00 PM")).body.success,
+        true
+      );
     });
 
     test("garbage appointment ids do not crash", async () => {
       const { token } = await registerUser(ctx.request);
-      const res = await ctx.request.post("/api/user/cancel-appointment").set("token", token).send({ appointmentId: "nope" });
+      const res = await ctx.request
+        .post("/api/user/cancel-appointment")
+        .set("token", token)
+        .send({ appointmentId: "nope" });
       assert.equal(res.body.success, false);
     });
   });
 
   describe("reschedule", () => {
     const reschedule = (token, appointmentId, slotDate, slotTime) =>
-      ctx.request.post("/api/user/reschedule-appointment").set("token", token).send({ appointmentId, slotDate, slotTime });
+      ctx.request
+        .post("/api/user/reschedule-appointment")
+        .set("token", token)
+        .send({ appointmentId, slotDate, slotTime });
 
     test("moves to a free slot: old slot freed, new slot held", async () => {
       const { request } = ctx;
@@ -127,10 +170,19 @@ describe("booking, rescheduling and cancelling", () => {
       const b = await registerUser(request);
       await book(request, a.token, doctor._id, "14_11_2026", "04:00 PM");
       const [appt] = await myAppointments(request, a.token);
-      assert.equal((await reschedule(a.token, appt._id, "14_11_2026", "04:00 PM")).body.success, false);
-      assert.equal((await reschedule(b.token, appt._id, "15_11_2026", "04:00 PM")).body.success, false);
+      assert.equal(
+        (await reschedule(a.token, appt._id, "14_11_2026", "04:00 PM")).body.success,
+        false
+      );
+      assert.equal(
+        (await reschedule(b.token, appt._id, "15_11_2026", "04:00 PM")).body.success,
+        false
+      );
       await models.appointment.updateOne({ _id: appt._id }, { isCompleted: true });
-      assert.equal((await reschedule(a.token, appt._id, "15_11_2026", "04:00 PM")).body.success, false);
+      assert.equal(
+        (await reschedule(a.token, appt._id, "15_11_2026", "04:00 PM")).body.success,
+        false
+      );
     });
   });
 });

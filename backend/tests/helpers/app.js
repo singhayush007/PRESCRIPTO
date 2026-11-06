@@ -35,10 +35,10 @@ export async function boot(extraEnv = {}) {
   await connectDB();
 
   const models = {
-    user: (await import("../../models/userModel.js")).default,
-    doctor: (await import("../../models/doctorModel.js")).default,
-    appointment: (await import("../../models/appointmentModel.js")).default,
-    review: (await import("../../models/reviewModel.js")).default,
+    user: (await import("../../features/users/user.model.js")).default,
+    doctor: (await import("../../features/doctors/doctor.model.js")).default,
+    appointment: (await import("../../features/appointments/appointment.model.js")).default,
+    review: (await import("../../features/reviews/review.model.js")).default,
   };
   await models.appointment.init(); // make sure indexes (incl. the unique slot index) exist
 
@@ -55,7 +55,9 @@ let counter = 0;
 /** Registers a patient through the API and returns { token, email, id }. */
 export async function registerUser(request, name = "Test Patient") {
   const email = `patient${++counter}@test.com`;
-  const res = await request.post("/api/user/register").send({ name, email, password: "Password1!" });
+  const res = await request
+    .post("/api/user/register")
+    .send({ name, email, password: "Password1!" });
   if (!res.body.success) throw new Error(`register failed: ${res.body.message}`);
   return { token: res.body.token, email };
 }
@@ -82,11 +84,15 @@ export async function createDoctor(models, overrides = {}) {
 export const loginDoctor = async (request, email) =>
   (await request.post("/api/doctor/login").send({ email, password: DOCTOR_PASSWORD })).body.token;
 
-export const loginAdmin = async (request) => (await request.post("/api/admin/login").send(ADMIN)).body.token;
+export const loginAdmin = async (request) =>
+  (await request.post("/api/admin/login").send(ADMIN)).body.token;
 
 /** Books tomorrow-ish slot through the API; returns the response body. */
 export const book = (request, token, docId, slotDate = "7_11_2026", slotTime = "10:00 AM") =>
-  request.post("/api/user/book-appointment").set("token", token).send({ docId: String(docId), slotDate, slotTime });
+  request
+    .post("/api/user/book-appointment")
+    .set("token", token)
+    .send({ docId: String(docId), slotDate, slotTime });
 
 export const myAppointments = async (request, token) =>
   (await request.get("/api/user/appointments").set("token", token)).body.appointments;

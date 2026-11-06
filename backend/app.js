@@ -8,11 +8,11 @@ import pinoHttp from "pino-http";
 import mongoose from "mongoose";
 
 import { assertEnv, config } from "./config/env.js";
-import { logger } from "./utils/logger.js";
+import { logger } from "./shared/utils/logger.js";
 import connectCloudinary from "./config/cloudinary.js";
-import userRouter from "./routes/userRoute.js";
-import doctorRouter from "./routes/doctorRoute.js";
-import adminRouter from "./routes/adminRoute.js";
+import userRouter from "./features/users/user.routes.js";
+import doctorRouter from "./features/doctors/doctor.routes.js";
+import adminRouter from "./features/admin/admin.routes.js";
 
 // Fail fast (with a clear message) if the app is misconfigured
 assertEnv();
@@ -33,14 +33,17 @@ app.use(
       return id;
     },
     autoLogging: { ignore: (req) => req.url === "/health" || req.url === "/ready" },
-    customLogLevel: (req, res, err) => (err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info"),
+    customLogLevel: (req, res, err) =>
+      err || res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info",
   })
 );
 
 app.use(helmet());
 
 if (config.isProd && config.corsOrigins.length === 0) {
-  logger.warn("CORS_ORIGINS is not set: the API accepts requests from any origin. Set it in production.");
+  logger.warn(
+    "CORS_ORIGINS is not set: the API accepts requests from any origin. Set it in production."
+  );
 }
 app.use(
   cors({

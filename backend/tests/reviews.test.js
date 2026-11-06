@@ -11,7 +11,10 @@ describe("ratings and reviews", () => {
   after(() => ctx.stop());
 
   const review = (token, appointmentId, body) =>
-    ctx.request.post("/api/user/add-review").set("token", token).send({ appointmentId, ...body });
+    ctx.request
+      .post("/api/user/add-review")
+      .set("token", token)
+      .send({ appointmentId, ...body });
 
   async function completedVisit(slotTime) {
     const user = await registerUser(ctx.request, "Reviewer " + slotTime);
@@ -33,7 +36,11 @@ describe("ratings and reviews", () => {
   test("validates the rating (1-5, integer, not an object)", async () => {
     const { user, appt } = await completedVisit("10:00 AM");
     for (const rating of [0, 6, 2.5, "abc", { $gt: 0 }]) {
-      assert.equal((await review(user.token, appt._id, { rating })).body.success, false, JSON.stringify(rating));
+      assert.equal(
+        (await review(user.token, appt._id, { rating })).body.success,
+        false,
+        JSON.stringify(rating)
+      );
     }
   });
 
@@ -46,10 +53,17 @@ describe("ratings and reviews", () => {
   test("one review per appointment; averages are recomputed; public list hides user ids", async () => {
     const first = await completedVisit("12:00 PM");
     const second = await completedVisit("12:30 PM");
-    assert.equal((await review(first.user.token, first.appt._id, { rating: 5, comment: "Great doctor" })).body.success, true);
+    assert.equal(
+      (await review(first.user.token, first.appt._id, { rating: 5, comment: "Great doctor" })).body
+        .success,
+      true
+    );
     const dup = await review(first.user.token, first.appt._id, { rating: 1 });
     assert.match(dup.body.message, /already/);
-    assert.equal((await review(second.user.token, second.appt._id, { rating: 4 })).body.success, true);
+    assert.equal(
+      (await review(second.user.token, second.appt._id, { rating: 4 })).body.success,
+      true
+    );
 
     const fresh = await ctx.models.doctor.findById(doctor._id);
     assert.equal(fresh.ratingCount, 2);

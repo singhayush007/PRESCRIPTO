@@ -10,8 +10,8 @@ import {
   doctorProfile,
   updateDoctorProfile,
   doctorReviews,
-} from "../controllers/doctorController.js";
-import authDoctor from "../middleware/authDoctor.js";
+} from "./doctor.controller.js";
+import authDoctor from "../../shared/middleware/authDoctor.js";
 const doctorRouter = express.Router();
 
 doctorRouter.post("/login", loginDoctor);

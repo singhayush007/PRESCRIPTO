@@ -23,6 +23,5 @@ appointmentSchema.index(
 );
 
 const appointmentModel =
-  mongoose.models.appointment ||
-  mongoose.model("appointment", appointmentSchema);
+  mongoose.models.appointment || mongoose.model("appointment", appointmentSchema);
 export default appointmentModel;

@@ -1,12 +1,11 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
-import doctorModel from "../models/doctorModel.js";
-import appointmentModel from "../models/appointmentModel.js";
-import reviewModel from "../models/reviewModel.js";
-import { isValidId, releaseSlot } from "../utils/helpers.js";
-import { fail, serverError } from "../utils/http.js";
-
+import doctorModel from "./doctor.model.js";
+import appointmentModel from "../appointments/appointment.model.js";
+import reviewModel from "../reviews/review.model.js";
+import { isValidId, releaseSlot } from "../../shared/utils/helpers.js";
+import { fail, serverError } from "../../shared/utils/http.js";
 
 // API for doctor Login
 const loginDoctor = async (req, res) => {
@@ -200,7 +199,12 @@ const doctorDashboard = async (req, res) => {
         appointments: appointments.length,
         patients,
         latestAppointments: appointments.slice(0, 5),
-        status: { cancelled, completed, paid, pending: Math.max(appointments.length - cancelled - completed - paid, 0) },
+        status: {
+          cancelled,
+          completed,
+          paid,
+          pending: Math.max(appointments.length - cancelled - completed - paid, 0),
+        },
         recentBookings: appointments.filter((a) => a.date >= weekAgo).map((a) => a.date),
       },
     });
