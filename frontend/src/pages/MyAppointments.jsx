@@ -4,6 +4,10 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
+import RescheduleModal from "../components/RescheduleModal";
+import ReviewModal from "../components/ReviewModal";
+import { formatSlotDate } from "../utils/slots";
+import useDocumentTitle from "../utils/useDocumentTitle";
 
 const MyAppointments = () => {
   const { backendUrl, token } = useContext(AppContext);
@@ -11,29 +15,12 @@ const MyAppointments = () => {
 
   const [appointments, setAppointments] = useState([]);
   const [payment, setPayment] = useState("");
+  const [loading, setLoading] = useState(true);
+  useDocumentTitle("My appointments");
+  const [rescheduling, setRescheduling] = useState(null);
+  const [reviewing, setReviewing] = useState(null);
 
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  // Function to format the date eg. ( 20_01_2000 => 20 Jan 2000 )
-  const slotDateFormat = (slotDate) => {
-    const dateArray = slotDate.split("_");
-    return (
-      dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
-    );
-  };
+  const slotDateFormat = formatSlotDate;
 
   // Getting User Appointments Data Using API
   const getUserAppointments = async () => {
@@ -45,6 +32,8 @@ const MyAppointments = () => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,111 +135,126 @@ const MyAppointments = () => {
     }
   }, [token]);
 
+  const statusOf = (item) => {
+    if (item.cancelled) return { label: "Cancelled", cls: "bg-red-50 text-red-600" };
+    if (item.isCompleted) return { label: "Completed", cls: "bg-emerald-50 text-emerald-600" };
+    if (item.payment) return { label: "Paid", cls: "bg-primary-50 text-primary-600" };
+    return { label: "Payment pending", cls: "bg-amber-50 text-amber-600" };
+  };
+
+  const actionBtn =
+    "w-full rounded-full border border-slate-200 px-5 py-2.5 text-sm font-medium text-ink-soft transition-all duration-200 sm:min-w-48";
+
   return (
-    <div>
-      <p className="pb-3 mt-12 text-lg font-medium text-gray-600 border-b">
-        My appointments
-      </p>
-      <div className="">
-        {appointments.map((item, index) => (
-          <div
-            key={index}
-            className="grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-4 border-b"
-          >
-            <div>
-              <img
-                className="w-36 bg-[#EAEFFF]"
-                src={item.docData.image}
-                alt=""
-              />
-            </div>
-            <div className="flex-1 text-sm text-[#5E5E5E]">
-              <p className="text-[#262626] text-base font-semibold">
-                {item.docData.name}
-              </p>
-              <p>{item.docData.speciality}</p>
-              <p className="text-[#464646] font-medium mt-1">Address:</p>
-              <p className="">{item.docData.address.line1}</p>
-              <p className="">{item.docData.address.line2}</p>
-              <p className=" mt-1">
-                <span className="text-sm text-[#3C3C3C] font-medium">
-                  Date & Time:
-                </span>{" "}
-                {slotDateFormat(item.slotDate)} | {item.slotTime}
-              </p>
-            </div>
-            <div></div>
-            <div className="flex flex-col gap-2 justify-end text-sm text-center">
-              {!item.cancelled &&
-                !item.payment &&
-                !item.isCompleted &&
-                payment !== item._id && (
-                  <button
-                    onClick={() => setPayment(item._id)}
-                    className="text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300"
-                  >
-                    Pay Online
-                  </button>
-                )}
-              {!item.cancelled &&
-                !item.payment &&
-                !item.isCompleted &&
-                payment === item._id && (
-                  <button
-                    onClick={() => appointmentStripe(item._id)}
-                    className="text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-gray-100 hover:text-white transition-all duration-300 flex items-center justify-center"
-                  >
-                    <img
-                      className="max-w-20 max-h-5"
-                      src={assets.stripe_logo}
-                      alt=""
-                    />
-                  </button>
-                )}
-              {!item.cancelled &&
-                !item.payment &&
-                !item.isCompleted &&
-                payment === item._id && (
-                  <button
-                    onClick={() => appointmentRazorpay(item._id)}
-                    className="text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-gray-100 hover:text-white transition-all duration-300 flex items-center justify-center"
-                  >
-                    <img
-                      className="max-w-20 max-h-5"
-                      src={assets.razorpay_logo}
-                      alt=""
-                    />
-                  </button>
-                )}
-              {!item.cancelled && item.payment && !item.isCompleted && (
-                <button className="sm:min-w-48 py-2 border rounded text-[#696969]  bg-[#EAEFFF]">
-                  Paid
-                </button>
-              )}
+    <div className="animate-fade-up">
+      <h1 className="text-3xl font-bold tracking-tight">My appointments</h1>
+      <p className="mt-1 text-ink-soft">Manage, pay for or reschedule your visits.</p>
 
-              {item.isCompleted && (
-                <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
-                  Completed
-                </button>
-              )}
-
-              {!item.cancelled && !item.isCompleted && (
-                <button
-                  onClick={() => cancelAppointment(item._id)}
-                  className="text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
-                >
-                  Cancel appointment
-                </button>
-              )}
-              {item.cancelled && !item.isCompleted && (
-                <button className="sm:min-w-48 py-2 border border-red-500 rounded text-red-500">
-                  Appointment cancelled
-                </button>
-              )}
+      <div className="mt-8 flex flex-col gap-4">
+        {loading &&
+          [0, 1].map((i) => (
+            <div key={i} className="card flex animate-pulse gap-5 p-5">
+              <div className="h-32 w-32 rounded-2xl bg-slate-100" />
+              <div className="flex-1 space-y-3 py-2">
+                <div className="h-5 w-1/3 rounded bg-slate-100" />
+                <div className="h-4 w-1/4 rounded bg-slate-100" />
+                <div className="h-4 w-1/2 rounded bg-slate-100" />
+              </div>
             </div>
+          ))}
+
+        {!loading && appointments.length === 0 && (
+          <div className="card mx-auto max-w-md p-10 text-center">
+            <p className="text-lg font-semibold">No appointments yet</p>
+            <p className="mt-1 text-sm text-ink-soft">Find a doctor and book your first visit.</p>
+            <button onClick={() => navigate("/doctors")} className="btn-primary mt-5">
+              Find a doctor
+            </button>
           </div>
-        ))}
+        )}
+
+        {appointments.map((item) => {
+          const status = statusOf(item);
+          const open = !item.cancelled && !item.isCompleted;
+          return (
+            <div key={item._id} className="card flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
+              <img className="h-32 w-32 flex-shrink-0 rounded-2xl bg-primary-50 object-cover object-top" src={item.docData.image} alt="" />
+
+              <div className="flex-1 text-sm text-ink-soft">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-lg font-semibold text-ink">{item.docData.name}</p>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.cls}`}>{status.label}</span>
+                </div>
+                <p>{item.docData.speciality}</p>
+                <p className="mt-2 font-medium text-ink">
+                  🗓 {slotDateFormat(item.slotDate)} · {item.slotTime}
+                </p>
+                <p className="mt-1">
+                  📍 {item.docData.address?.line1}
+                  {item.docData.address?.line2 ? `, ${item.docData.address.line2}` : ""}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 text-center sm:w-52">
+                {open && !item.payment && payment !== item._id && (
+                  <button onClick={() => setPayment(item._id)} className="btn-primary !py-2.5">
+                    Pay online
+                  </button>
+                )}
+                {open && !item.payment && payment === item._id && (
+                  <>
+                    <button onClick={() => appointmentStripe(item._id)} className={`${actionBtn} flex items-center justify-center hover:border-primary`}>
+                      <img className="max-h-5 max-w-20" src={assets.stripe_logo} alt="Pay with Stripe" />
+                    </button>
+                    <button onClick={() => appointmentRazorpay(item._id)} className={`${actionBtn} flex items-center justify-center hover:border-primary`}>
+                      <img className="max-h-5 max-w-20" src={assets.razorpay_logo} alt="Pay with Razorpay" />
+                    </button>
+                  </>
+                )}
+
+                {item.isCompleted && !item.reviewed && (
+                  <button onClick={() => setReviewing(item)} className="btn-primary !py-2.5">
+                    ★ Rate doctor
+                  </button>
+                )}
+                {item.isCompleted && item.reviewed && <p className="py-2 text-sm font-medium text-amber-500">★ Reviewed</p>}
+
+                {open && (
+                  <button onClick={() => setRescheduling(item)} className={`${actionBtn} hover:border-primary hover:text-primary`}>
+                    Reschedule
+                  </button>
+                )}
+                {open && (
+                  <button onClick={() => cancelAppointment(item._id)} className={`${actionBtn} hover:border-red-300 hover:bg-red-50 hover:text-red-600`}>
+                    Cancel appointment
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {rescheduling && (
+        <RescheduleModal
+          appointment={rescheduling}
+          onClose={() => setRescheduling(null)}
+          onDone={() => {
+            setRescheduling(null);
+            getUserAppointments();
+          }}
+        />
+      )}
+      {reviewing && (
+        <ReviewModal
+          appointment={reviewing}
+          onClose={() => setReviewing(null)}
+          onDone={() => {
+            setReviewing(null);
+            getUserAppointments();
+          }}
+        />
+      )}
     </div>
   );
 };

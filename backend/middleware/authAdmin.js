@@ -2,25 +2,20 @@ import jwt from "jsonwebtoken";
 
 // admin authentication middleware
 const authAdmin = async (req, res, next) => {
+  const { atoken } = req.headers;
+  if (!atoken) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Not Authorized Login Again" });
+  }
   try {
-    const { atoken } = req.headers;
-    if (!atoken) {
-      return res.json({
-        success: false,
-        message: "Not Authorized Login Again",
-      });
-    }
     const token_decode = jwt.verify(atoken, process.env.JWT_SECRET);
-    if (token_decode !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD) {
-      return res.json({
-        success: false,
-        message: "Not Authorized Login Again",
-      });
-    }
+    if (token_decode.role !== "admin") throw new Error("Not admin");
     next();
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    res
+      .status(401)
+      .json({ success: false, message: "Session expired. Login Again" });
   }
 };
 

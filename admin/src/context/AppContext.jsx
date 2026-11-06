@@ -3,7 +3,7 @@ import { createContext } from "react";
 export const AppContext = createContext();
 
 const AppContextProvider = (props) => {
-  const currency = import.meta.env.VITE_CURRENCY;
+  const currency = import.meta.env.VITE_CURRENCY || "$";
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const months = [
@@ -25,16 +25,20 @@ const AppContextProvider = (props) => {
   const slotDateFormat = (slotDate) => {
     const dateArray = slotDate.split("_");
     return (
-      dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
+      dateArray[0] + " " + months[Number(dateArray[1]) - 1] + " " + dateArray[2]
     );
   };
 
-  // Function to calculate the age eg. ( 20_01_2000 => 24 )
+  // Function to calculate the age from a date of birth (returns "-" when unknown)
   const calculateAge = (dob) => {
-    const today = new Date();
     const birthDate = new Date(dob);
+    if (!dob || Number.isNaN(birthDate.getTime())) return "-";
+    const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
-    return age;
+    const hadBirthday =
+      today.getMonth() > birthDate.getMonth() ||
+      (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+    return hadBirthday ? age : age - 1;
   };
 
   const value = {

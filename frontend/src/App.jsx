@@ -1,6 +1,6 @@
 import React from "react";
 import Navbar from "./components/Navbar";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Doctors from "./pages/Doctors";
 import Login from "./pages/Login";
@@ -13,12 +13,27 @@ import Footer from "./components/Footer";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Verify from "./pages/Verify";
+import MobileTabBar from "./components/MobileTabBar";
+import useTheme from "./utils/useTheme";
+import { useContext } from "react";
+import { AppContext } from "./context/AppContext";
+import ScrollToTop from "./components/ScrollToTop";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Onboarding from "./components/Onboarding";
+import NotFound from "./pages/NotFound";
+import BookingSuccess from "./pages/BookingSuccess";
 
 const App = () => {
+  const { dark } = useTheme();
+  const { token } = useContext(AppContext);
+  const { pathname } = useLocation();
   return (
-    <div className="mx-4 sm:mx-[10%]">
-      <ToastContainer />
+    <div className="flex min-h-screen flex-col">
+      <ScrollToTop />
+      <Onboarding enabled={!token && pathname === "/"} />
+      <ToastContainer position="top-right" autoClose={3000} theme={dark ? "dark" : "light"} />
       <Navbar />
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-8 pt-6 sm:px-6 lg:px-8">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/doctors" element={<Doctors />} />
@@ -27,11 +42,15 @@ const App = () => {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/appointment/:docId" element={<Appointment />} />
-        <Route path="/my-appointments" element={<MyAppointments />} />
-        <Route path="/my-profile" element={<MyProfile />} />
-        <Route path="/verify" element={<Verify />} />
+        <Route path="/my-appointments" element={<ProtectedRoute><MyAppointments /></ProtectedRoute>} />
+        <Route path="/my-profile" element={<ProtectedRoute><MyProfile /></ProtectedRoute>} />
+        <Route path="/verify" element={<ProtectedRoute><Verify /></ProtectedRoute>} />
+        <Route path="/booking-success" element={<ProtectedRoute><BookingSuccess /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
+      </main>
       <Footer />
+      <MobileTabBar />
     </div>
   );
 };
