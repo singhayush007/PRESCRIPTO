@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const appointmentSchema = new mongoose.Schema({
-  userId: { type: String, required: true },
-  docId: { type: String, required: true },
+  userId: { type: String, required: true, index: true },
+  docId: { type: String, required: true, index: true },
   slotDate: { type: String, required: true },
   slotTime: { type: String, required: true },
   userData: { type: Object, required: true },
@@ -12,6 +12,7 @@ const appointmentSchema = new mongoose.Schema({
   cancelled: { type: Boolean, default: false },
   payment: { type: Boolean, default: false },
   isCompleted: { type: Boolean, default: false },
+  reviewed: { type: Boolean, default: false },
 });
 
 const appointmentModel =
