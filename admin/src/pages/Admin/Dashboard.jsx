@@ -1,97 +1,107 @@
-import React, { useContext, useEffect } from "react";
-import { assets } from "../../assets/assets";
+import React, { useContext, useEffect, useState } from "react";
 import { AdminContext } from "../../context/AdminContext";
 import { AppContext } from "../../context/AppContext";
+import { Avatar, ConfirmDialog, EmptyState, PageHeader, Skeleton, StatCard, StatusBadge } from "../../components/ui";
+import { BarChart, StatusDonut, bucketLast7Days } from "../../components/Charts";
+import useDocumentTitle from "../../utils/useDocumentTitle";
+import Icon from "../../components/Icon";
 
 const Dashboard = () => {
-  const { aToken, getDashData, cancelAppointment, dashData } =
-    useContext(AdminContext);
-  const { slotDateFormat } = useContext(AppContext);
+  const { aToken, getDashData, cancelAppointment, dashData } = useContext(AdminContext);
+  const { slotDateFormat, currency } = useContext(AppContext);
+  const [toCancel, setToCancel] = useState(null);
+  useDocumentTitle("Dashboard");
 
   useEffect(() => {
-    if (aToken) {
-      getDashData();
-    }
+    if (aToken) getDashData();
   }, [aToken]);
 
-  return (
-    dashData && (
-      <div className="m-5">
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <img className="w-14" src={assets.doctor_icon} alt="" />
-            <div>
-              <p className="text-xl font-semibold text-gray-600">
-                {dashData.doctors}
-              </p>
-              <p className="text-gray-400">Doctors</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <img className="w-14" src={assets.appointments_icon} alt="" />
-            <div>
-              <p className="text-xl font-semibold text-gray-600">
-                {dashData.appointments}
-              </p>
-              <p className="text-gray-400">Appointments</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <img className="w-14" src={assets.patients_icon} alt="" />
-            <div>
-              <p className="text-xl font-semibold text-gray-600">
-                {dashData.patients}
-              </p>
-              <p className="text-gray-400">Patients</p>
-            </div>
-          </div>
+  if (!dashData) {
+    return (
+      <div>
+        <PageHeader title="Dashboard" subtitle="Overview of your platform" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
         </div>
-
-        <div className="bg-white">
-          <div className="flex items-center gap-2.5 px-4 py-4 mt-10 rounded-t border">
-            <img src={assets.list_icon} alt="" />
-            <p className="font-semibold">Latest Bookings</p>
-          </div>
-
-          <div className="pt-4 border border-t-0">
-            {dashData.latestAppointments.slice(0, 5).map((item, index) => (
-              <div
-                className="flex items-center px-6 py-3 gap-3 hover:bg-gray-100"
-                key={index}
-              >
-                <img
-                  className="rounded-full w-10"
-                  src={item.docData.image}
-                  alt=""
-                />
-                <div className="flex-1 text-sm">
-                  <p className="text-gray-800 font-medium">
-                    {item.docData.name}
-                  </p>
-                  <p className="text-gray-600 ">
-                    Booking on {slotDateFormat(item.slotDate)}
-                  </p>
-                </div>
-                {item.cancelled ? (
-                  <p className="text-red-400 text-xs font-medium">Cancelled</p>
-                ) : item.isCompleted ? (
-                  <p className="text-green-500 text-xs font-medium">
-                    Completed
-                  </p>
-                ) : (
-                  <img
-                    onClick={() => cancelAppointment(item._id)}
-                    className="w-10 cursor-pointer"
-                    src={assets.cancel_icon}
-                    alt=""
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-72" />
         </div>
       </div>
-    )
+    );
+  }
+
+  const week = bucketLast7Days(dashData.recentBookings);
+  const weekTotal = week.reduce((s, d) => s + d.value, 0);
+
+  return (
+    <div className="animate-fade-up">
+      <PageHeader title="Dashboard" subtitle="Overview of doctors, bookings and revenue" />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon="stethoscope" label="Doctors" value={dashData.doctors} />
+        <StatCard icon="calendar" label="Appointments" value={dashData.appointments} tone="amber" />
+        <StatCard icon="users" label="Patients" value={dashData.patients} tone="emerald" />
+        <StatCard icon="wallet" label="Revenue" value={`${currency}${dashData.revenue ?? 0}`} tone="rose" hint="Paid + completed" />
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+        <div className="card p-6">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="font-bold">Bookings</p>
+              <p className="text-sm text-ink-soft">Last 7 days</p>
+            </div>
+            <span className="flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-600">
+              <Icon name="trend" className="h-3.5 w-3.5" /> {weekTotal} new
+            </span>
+          </div>
+          <BarChart data={week} />
+        </div>
+
+        <div className="card p-6">
+          <p className="mb-5 font-bold">Appointment status</p>
+          <StatusDonut status={dashData.status} />
+        </div>
+      </div>
+
+      <div className="card mt-6 overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <p className="font-bold">Latest bookings</p>
+        </div>
+        {dashData.latestAppointments.length === 0 ? (
+          <EmptyState title="No bookings yet" text="New appointments will appear here." />
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {dashData.latestAppointments.map((item) => (
+              <li key={item._id} className="flex items-center gap-3 px-6 py-3.5 transition hover:bg-slate-50">
+                <Avatar src={item.docData.image} name={item.docData.name} className="h-10 w-10" />
+                <div className="min-w-0 flex-1 text-sm">
+                  <p className="truncate font-semibold">{item.docData.name}</p>
+                  <p className="truncate text-ink-soft">{item.userData.name} · {slotDateFormat(item.slotDate)}, {item.slotTime}</p>
+                </div>
+                <StatusBadge item={item} />
+                {!item.cancelled && !item.isCompleted && (
+                  <button onClick={() => setToCancel(item)} className="rounded-full p-2 text-ink-muted transition hover:bg-red-50 hover:text-red-500" aria-label="Cancel appointment">
+                    <Icon name="x" className="h-4 w-4" />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={!!toCancel}
+        danger
+        title="Cancel this appointment?"
+        message={toCancel ? `${toCancel.userData.name}'s visit with ${toCancel.docData.name} on ${slotDateFormat(toCancel.slotDate)} will be cancelled and the slot freed.` : ""}
+        confirmLabel="Cancel appointment"
+        onConfirm={() => cancelAppointment(toCancel._id)}
+        onClose={() => setToCancel(null)}
+      />
+    </div>
   );
 };
 
