@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 
+// user authentication middleware
 const authUser = async (req, res, next) => {
-  const token = req.headers.token || req.cookies?.token;
+  const { token } = req.headers;
 
   if (!token) {
     return res
@@ -10,13 +11,13 @@ const authUser = async (req, res, next) => {
   }
 
   try {
-    console.log("Token received:", token);
     const token_decode = jwt.verify(token, process.env.JWT_SECRET);
+    if (!token_decode.id) throw new Error("Invalid token");
+    req.userId = token_decode.id; // survives multer replacing req.body
     req.body.userId = token_decode.id;
     next();
   } catch (error) {
-    console.log("JWT Error:", error);
-    res.status(401).json({ success: false, message: error.message });
+    res.status(401).json({ success: false, message: "Session expired. Login Again" });
   }
 };
 
