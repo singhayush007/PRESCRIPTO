@@ -13,6 +13,7 @@ const AppContextProvider = (props) => {
     localStorage.getItem("token") ? localStorage.getItem("token") : ""
   );
   const [userData, setUserData] = useState(false);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
 
   // Getting Doctors using API
   const getDoctosData = async () => {
@@ -26,6 +27,8 @@ const AppContextProvider = (props) => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+    } finally {
+      setLoadingDoctors(false);
     }
   };
 
@@ -59,6 +62,7 @@ const AppContextProvider = (props) => {
 
   const value = {
     doctors,
+    loadingDoctors,
     getDoctosData,
     currencySymbol,
     backendUrl,
