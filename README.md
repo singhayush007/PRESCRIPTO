@@ -27,6 +27,7 @@
 - [Getting Started](#-getting-started)
 - [Environment Variables](#-environment-variables)
 - [Running the App](#-running-the-app)
+- [Testing & Quality](#-testing--quality)
 - [API Overview](#-api-overview)
 - [Deployment](#-deployment)
 - [Security Notes](#-security-notes)
@@ -96,14 +97,15 @@ The project has three apps: the patient **frontend**, an **admin panel** (used b
 
 ## 🧠 Engineering Highlights
 
-- **Race-condition-free booking & rescheduling** — a slot is claimed with one atomic MongoDB update (`$ne` + `$push`); 10 simultaneous requests for one slot produce exactly one booking, and a failed reschedule never loses the original slot.
+- **Race-condition-free booking & rescheduling** — a slot is claimed with one atomic MongoDB update (`$ne` + `$push`); 10 simultaneous requests for one slot produce exactly one booking. A **partial unique index** on active appointments makes the database refuse duplicates even if application code is bypassed, and a failed reschedule never loses the original slot.
 - **Server-side payment verification** — Stripe sessions and Razorpay orders are verified with the gateway and matched to the logged-in user, so a client cannot mark an appointment as paid.
-- **Hardened auth** — JWTs expire, admin tokens carry a role (not credentials), login errors don't reveal whether an email exists, and login / register are rate limited.
-- **Consistent slot lifecycle** — cancelling (patient, doctor or admin) frees the slot again; booked slots always match active appointments.
-- **Denormalized ratings** — average rating and count are stored on the doctor and recomputed with an aggregation on every new review, so the listing page stays a single query.
-- **Efficient analytics** — dashboard stats use `countDocuments` and aggregations (status counts, revenue, last-7-days bookings) instead of loading whole collections.
-- **Shared design system** — the patient app and admin panel use the same Tailwind tokens (CSS variables), which is what makes dark mode a one-class switch.
-- **Accessible UI** — keyboard-operable dialogs, command palette and tabs, ARIA roles / labels, and `prefers-reduced-motion` support.
+- **Hardened auth & API** — expiring JWTs, role-claim admin tokens, no account enumeration, rate-limited login/register, Helmet, strict CORS option, `trust proxy` support so limits use real client IPs, and clean JSON errors for bad bodies and uploads.
+- **Production operations** — validated config (fails fast with a clear message), structured JSON logs (pino) with a request id on every response, `/health` and `/ready` endpoints, graceful shutdown, cached DB connection for serverless.
+- **Tested** — 44 backend integration tests (real Express app + in-memory MongoDB, hermetic) plus frontend/admin unit tests, all run in CI together with lint, build, format check and a dependency audit gate.
+- **Feature-first architecture** — `features/<name>/{components,hooks,services,views,...}` + `shared/` in both React apps, an API **services layer** (components never call axios), and domain modules in the backend. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **Fast & resilient UI** — route-level code splitting, optimized WebP images (bundle ~4 MB → ~0.6 MB), error boundaries, loading skeletons, SEO/Open Graph tags, skip link and `prefers-reduced-motion` support.
+- **Denormalized ratings & efficient analytics** — averages are recomputed with an aggregation on each review; dashboards use counts and aggregations instead of loading whole collections.
+- **Shared design system** — both apps use the same Tailwind tokens (CSS variables), so dark mode is a one-class switch.
 
 ---
 
@@ -130,7 +132,15 @@ The project has three apps: the patient **frontend**, an **admin panel** (used b
 ![Multer](https://img.shields.io/badge/Multer-EE6C4D?style=flat)
 ![Razorpay](https://img.shields.io/badge/Razorpay-008CFF?style=flat)
 ![Stripe](https://img.shields.io/badge/Stripe-635BFF?style=flat)
+![Pino](https://img.shields.io/badge/Pino-687634?style=flat)
 ![Nodemon](https://img.shields.io/badge/Nodemon-76D04B?style=flat)
+
+### Quality
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=flat&logo=vitest&logoColor=white)
+![Node test runner](https://img.shields.io/badge/node:test-339933?style=flat&logo=node.js&logoColor=white)
+![ESLint](https://img.shields.io/badge/ESLint-4B32C3?style=flat&logo=eslint&logoColor=white)
+![Prettier](https://img.shields.io/badge/Prettier-F7B93E?style=flat&logo=prettier&logoColor=black)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=githubactions&logoColor=white)
 
 ---
 
@@ -138,37 +148,42 @@ The project has three apps: the patient **frontend**, an **admin panel** (used b
 
 ```
 PRESCRIPTO/
+├── backend/                     # Express REST API
+│   ├── api/server.js            # entry point (also the Vercel serverless entry)
+│   ├── app.js                   # Express app: middleware + routes (imported by tests)
+│   ├── config/                  # env validation, MongoDB, Cloudinary
+│   ├── features/                # one folder per domain
+│   │   ├── users/               # user.model / controller / routes (auth, profile)
+│   │   ├── doctors/             # doctor.model / controller / routes
+│   │   ├── appointments/        # booking, cancel, reschedule (+ appointment.service)
+│   │   ├── payments/            # Stripe + Razorpay
+│   │   ├── reviews/             # ratings & reviews
+│   │   └── admin/               # admin controller + routes
+│   ├── shared/                  # middleware/ (auth guards, upload), utils/ (logger, http, helpers)
+│   └── tests/                   # integration tests (in-memory MongoDB)
 │
-├── admin/                   # Admin + Doctor panel (React + Vite + Tailwind)
-│   ├── src/
-│   │   ├── components/      # Sidebar, navbar, charts, shared UI kit
-│   │   ├── context/         # Admin / Doctor / App contexts
-│   │   ├── pages/           # Admin/, Doctor/, Login, NotFound
-│   │   └── utils/           # theme + document-title hooks
-│   └── .env.example
+├── frontend/                    # Patient app (React + Vite + Tailwind)
+│   └── src/
+│       ├── app/                 # App.jsx (routes, lazy pages)
+│       ├── components/          # layout/ (navbar, footer, tab bar)  common/ (modal, error boundary...)
+│       ├── features/            # home, doctors, booking, my-appointments, payments,
+│       │                        # auth, profile, search, onboarding, about, contact, not-found
+│       │   └── <feature>/{components,hooks,services,constants,views}
+│       ├── shared/              # api/http.js (axios), hooks/, utils/, constants/
+│       ├── store/               # AppContext (global state)
+│       └── assets/
 │
-├── backend/                 # Node.js + Express REST API
-│   ├── api/server.js        # App entry (also the Vercel serverless entry)
-│   ├── config/              # MongoDB & Cloudinary setup
-│   ├── controllers/         # user / doctor / admin logic
-│   ├── middleware/          # JWT auth guards & upload (multer)
-│   ├── models/              # user, doctor, appointment, review
-│   ├── routes/              # API routes
-│   ├── utils/               # shared helpers (slot release, uploads, validation)
-│   └── .env.example
+├── admin/                       # Admin + Doctor panel (same layout as the patient app)
+│   └── src/{app,components,features,shared,store,assets}
 │
-├── frontend/                # Patient app (React + Vite + Tailwind)
-│   ├── src/
-│   │   ├── components/      # Navbar, DoctorCard, Dashboard, modals, command palette…
-│   │   ├── context/         # App context (doctors, auth, profile)
-│   │   ├── pages/           # Home, Doctors, Appointment, MyAppointments, …
-│   │   └── utils/           # slot helpers, hooks (saved doctors, theme, titles)
-│   └── .env.example
-│
-├── docs/screenshots/        # README screenshots
-├── .github/workflows/       # CI (lint + build)
-└── README.md
+├── docs/                        # ARCHITECTURE.md, ENV_REFERENCE.md, screenshots/
+├── .githooks/                   # pre-push hook: no direct pushes to main
+├── .github/                     # CI, Dependabot, PR template
+├── CLAUDE.md                    # naming + structure conventions
+└── package.json                 # root scripts (lint, test, build, format)
 ```
+
+Conventions (naming, `@/` import alias, services layer) are documented in [CLAUDE.md](CLAUDE.md).
 
 ---
 
@@ -176,7 +191,7 @@ PRESCRIPTO/
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18+
+- [Node.js](https://nodejs.org/) v18+ (v22 recommended, see `.nvmrc`)
 - [npm](https://www.npmjs.com/) v9+
 - [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account (or a local MongoDB)
 - [Cloudinary](https://cloudinary.com/) account (image uploads)
@@ -192,9 +207,7 @@ cd PRESCRIPTO
 ### 2. Install dependencies
 
 ```bash
-cd backend  && npm install
-cd ../frontend && npm install
-cd ../admin && npm install
+npm run install:all      # installs backend, frontend and admin (and sets up the git hooks)
 ```
 
 ### 3. Configure environment variables
@@ -211,7 +224,7 @@ See [Environment Variables](#-environment-variables). **Never commit your `.env`
 
 ## 🔐 Environment Variables
 
-Each package has a `.env.example`. Copy it to `.env` and fill in your values.
+Each package has a `.env.example`. Copy it to `.env` and fill in your values. The full reference is in [docs/ENV_REFERENCE.md](docs/ENV_REFERENCE.md).
 
 ### Backend (`backend/.env`)
 
@@ -233,6 +246,8 @@ cp backend/.env.example backend/.env
 | `FRONTEND_URL` | | Patient-app URL used for Stripe return links |
 | `RATE_LIMIT_MAX` | | Requests per 15 min per IP (default `300`) |
 | `AUTH_RATE_LIMIT_MAX` | | Login / register attempts per 15 min per IP (default `20`) |
+| `TRUST_PROXY` | | Reverse proxies in front of the API (default `1` in production) |
+| `LOG_LEVEL` | | `info` (default), `debug`, `warn`, ... |
 
 The server refuses to start if `JWT_SECRET`, `MONGODB_URI`, `ADMIN_EMAIL` or `ADMIN_PASSWORD` is missing.
 
@@ -262,24 +277,32 @@ cp admin/.env.example admin/.env
 
 ## ▶️ Running the App
 
-Open **three terminals**:
+Install everything once, then start the three apps (three terminals):
 
 ```bash
-# 1) Backend  → http://localhost:4000   (health check: /health)
-cd backend && npm run server      # nodemon (dev)   |   npm start  → plain node
+npm run install:all      # backend + frontend + admin
+
+npm run dev:backend      # API            -> http://localhost:4000   (health: /health, readiness: /ready)
+npm run dev:frontend     # Patient app    -> http://localhost:5173
+npm run dev:admin        # Admin / Doctor -> http://localhost:5174
 ```
+
+Production API: `cd backend && npm start`.
+
+---
+
+## 🧪 Testing & Quality
 
 ```bash
-# 2) Patient app → http://localhost:5173
-cd frontend && npm run dev
+npm test                 # backend integration tests + frontend/admin unit tests
+npm run lint             # ESLint in all three apps
+npm run build            # production builds of both React apps
+npm run format:check     # Prettier  (npm run format to fix)
 ```
 
-```bash
-# 3) Admin / Doctor panel → http://localhost:5174
-cd admin && npm run dev -- --port 5174
-```
-
-Other scripts (frontend and admin): `npm run build` (production build) and `npm run lint`.
+- Backend tests start the real Express app against an **in-memory MongoDB** (no database, Stripe or Cloudinary needed) and cover auth, concurrent booking, rescheduling, reviews, dashboards, admin uploads, rate limiting and security headers.
+- CI (GitHub Actions) runs all of the above plus `npm audit` (production dependencies, high severity) on every pull request.
+- A git hook blocks direct pushes to `main`; work goes through Pull Requests (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ---
 
@@ -292,7 +315,7 @@ All endpoints are under `/api`. Authenticated routes expect the JWT in a header:
 | **Patient** `/api/user` | `POST /register` · `POST /login` · `GET /get-profile` · `POST /update-profile` · `POST /book-appointment` · `GET /appointments` · `POST /cancel-appointment` · `POST /reschedule-appointment` · `POST /add-review` · `POST /payment-stripe` · `POST /verifyStripe` · `POST /payment-razorpay` · `POST /verifyRazorpay` |
 | **Doctor** `/api/doctor` | `POST /login` · `GET /list` *(public)* · `GET /reviews/:docId` *(public)* · `GET /appointments` · `POST /complete-appointment` · `POST /cancel-appointment` · `POST /change-availability` · `GET /profile` · `POST /update-profile` · `GET /dashboard` |
 | **Admin** `/api/admin` | `POST /login` · `POST /add-doctor` · `GET /all-doctors` · `POST /change-availability` · `GET /appointments` · `POST /cancel-appointment` · `GET /dashboard` |
-| **System** | `GET /health` |
+| **System** | `GET /health` (liveness) · `GET /ready` (database connected) |
 
 Responses use the shape `{ success: boolean, message?: string, ...data }`.
 
@@ -316,6 +339,8 @@ The three apps deploy independently — the live demo runs on **Vercel**.
 
 ## 🛡️ Security Notes
 
+See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
+
 - `.env` files are git-ignored. If a secret was ever committed, **rotate it** (database password, Cloudinary, Stripe / Razorpay keys, `JWT_SECRET`, admin password) — removing the file from the latest commit does not remove it from git history.
 - Use a strong, unique `JWT_SECRET` and admin password in production.
 
@@ -323,7 +348,7 @@ The three apps deploy independently — the live demo runs on **Vercel**.
 
 ## 🤝 Contributing
 
-Contributions are welcome!
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and workflow.
 
 1. Fork the repository
 2. Create a branch: `git checkout -b feature/your-feature-name`
