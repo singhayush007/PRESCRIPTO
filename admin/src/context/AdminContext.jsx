@@ -11,8 +11,8 @@ const AdminContextProvider = (props) => {
     localStorage.getItem("aToken") ? localStorage.getItem("aToken") : ""
   );
 
-  const [appointments, setAppointments] = useState([]);
-  const [doctors, setDoctors] = useState([]);
+  const [appointments, setAppointments] = useState(null); // null = still loading
+  const [doctors, setDoctors] = useState(null);
   const [dashData, setDashData] = useState(false);
 
   // Getting all Doctors data from Database using API
@@ -80,6 +80,7 @@ const AdminContextProvider = (props) => {
       if (data.success) {
         toast.success(data.message);
         getAllAppointments();
+        getDashData(); // keep dashboard numbers/charts in sync
       } else {
         toast.error(data.message);
       }
