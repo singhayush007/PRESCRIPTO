@@ -14,7 +14,13 @@ const connectDB = () => {
     mongoose.connection.on("error", (err) => logger.error({ err }, "MongoDB connection error"));
     mongoose.connection.on("disconnected", () => logger.warn("MongoDB disconnected"));
     connecting = mongoose
-      .connect(`${process.env.MONGODB_URI}/prescripto`, { serverSelectionTimeoutMS: 10000 })
+      .connect(`${process.env.MONGODB_URI}/prescripto`, {
+        serverSelectionTimeoutMS: 10000,
+        // Vercel's serverless Node runtime resolves the `mongodb+srv://` SRV/TXT records over
+        // IPv6 first and that lookup hangs, which makes every query buffer-timeout at 10s even
+        // though the same URI connects instantly elsewhere. Forcing IPv4 skips that hang.
+        family: 4,
+      })
       .catch((err) => {
         connecting = null; // allow a retry on the next call
         throw err;
