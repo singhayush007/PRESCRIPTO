@@ -39,7 +39,7 @@ updates:
       - dependency-name: "eslint-plugin-react-hooks"
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint-plugin-react-refresh"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "react-toastify"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-router-dom"
@@ -74,7 +74,7 @@ updates:
       - dependency-name: "eslint-plugin-react-hooks"
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint-plugin-react-refresh"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "react-toastify"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-router-dom"
